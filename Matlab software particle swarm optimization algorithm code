@@ -1,0 +1,101 @@
+%% 清空环境
+clc
+clear all
+
+%% 参数初始化
+%粒子群算法中的两个参数
+c1 = 0.149445;
+c2 = 0.149445;
+
+maxgen=150;   % 进化次数
+sizepop=250;   %种群规模
+
+Vmax=[2 1 0.3 0.2 0.1];
+Vmin=-Vmax;
+popmax=[45.2 70.2 13.6 7.6 2.08];
+popmin=[33.6 64.6 12.2 4.6 0.8];
+
+pop = zeros(sizepop,5);
+avgfit = zeros(maxgen,1);
+%% 产生初始粒子和速度
+for i=1:sizepop
+    %随机产生一个种群
+    tmp=[];
+    for len=1:1:5
+        tmp=[tmp popmin(len)+(popmax(len)-popmin(len))*rand()];
+    end
+    pop(i,:)=tmp;    %初始种群
+    V(i,:)=0.05*rands(1,5);  %初始化速度
+    %计算适应度
+    fitness(i)=fun(pop(i,:));   %染色体的适应度
+end
+
+% pause
+%% 个体极值和群体极值
+[bestfitness bestindex]=min(fitness);
+avgfit(1) = sum(fitness)/maxgen;
+zbest=pop(bestindex,:);   %全局最佳
+gbest=pop;    %个体最佳
+fitnessgbest=fitness;   %个体最佳适应度值
+fitnesszbest=bestfitness;   %全局最佳适应度值
+
+%% 迭代寻优
+for i=1:maxgen
+    
+    for j=1:sizepop
+        
+        %速度更新
+        V(j,:) = V(j,:) + c1*rand*(gbest(j,:) - pop(j,:)) + c2*rand*(zbest - pop(j,:));
+        V(j,:) = V(j,:).*(0.5+rand/2);
+        for len=1:1:5
+            if V(j,len)>Vmax(len)
+                V(j,len)=Vmax(len);
+            end
+            if V(j,len)<Vmin(len)
+                V(j,len)=Vmin(len);
+            end
+%             V(j,find(V(j,len)>Vmax(len)))=Vmax(len);
+%             V(j,find(V(j,len)<Vmin(len)))=Vmin(len);
+        end
+        
+        %种群更新
+        pop(j,:)=pop(j,:)+V(j,:);
+        for len=1:1:5
+            if pop(j,len)>popmax(len)
+                pop(j,len)=popmax(len);
+            end
+            if pop(j,len)<popmin(len)
+               pop(j,len)=popmin(len);
+            end
+%             pop(j,find(pop(j,len)>popmax(len)))=popmax(len);
+%             pop(j,find(pop(j,len)<popmin(len)))=popmin(len);
+        end
+        
+        %适应度值
+        fitness(j)=fun(pop(j,:));
+        
+    end
+    
+    for j=1:sizepop
+        
+        %个体最优更新
+        if fitness(j) < fitnessgbest(j)
+            gbest(j,:) = pop(j,:);
+            fitnessgbest(j) = fitness(j);
+        end
+        
+        %群体最优更新
+        if fitness(j) < fitnesszbest
+            zbest = pop(j,:);
+            fitnesszbest = fitness(j);
+        end
+    end
+    yy(i)=fitnesszbest;
+    avgfit(i) = sum(fitness)/maxgen;
+end
+%% 结果分析
+plot(yy)
+% hold on
+% plot(avgfit)
+title('Optimal individual fitness','fontsize',12);
+xlabel('Evolution algebra','fontsize',12);ylabel('fitness','fontsize',12);
